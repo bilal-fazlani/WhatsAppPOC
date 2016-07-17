@@ -7,20 +7,19 @@ using Microsoft.Extensions.Configuration;
 using Whatsapp.AuthenticationManeger.InMemory;
 using WhatsAppApi;
 using WhatsAppApi.Helper;
-using WhatsAppConsole.Properties;
 
 namespace WhatsAppConsole
 {
     public class Program
     {
-        private static string PhoneNumber;
-        private static string Password;
-        private static string DestinationNumber;
+        private static string _phoneNumber;
+        private static string _password;
+        private static string _destinationNumber;
 
-        static WhatsApp wa = new WhatsApp(PhoneNumber, Password, "Bilal", debug: true);
+        private static WhatsApp _wa;
 
-        private static bool Connected = false;
-        private static bool Poll = false;
+        private static bool _connected = false;
+        private static bool _poll = false;
 
         public static void Main(string[] args)
         {
@@ -30,14 +29,16 @@ namespace WhatsAppConsole
                 .AddJsonFile("settings.json", true)
                 .Build();
 
-            PhoneNumber = config["PhoneNumber"];
-            Password = config["Password"];
-            DestinationNumber = config["DestinationNumber"];
+            _phoneNumber = config["PhoneNumber"];
+            _password = config["Password"];
+            _destinationNumber = config["DestinationNumber"];
+            string nickName = config["NickName"];
+
+            _wa = new WhatsApp(_phoneNumber, _password, nickName, debug: true);
 
             try
             {
                 Connect();
-                
             }
             catch (Exception e)
             {
@@ -60,7 +61,7 @@ namespace WhatsAppConsole
                     if(string.IsNullOrWhiteSpace(input)) continue;
                     if (input == "quit();") break;
 
-                    string sendResposne = wa.SendMessage(DestinationNumber, input);
+                    string sendResposne = _wa.SendMessage(_destinationNumber, input);
                     Console.WriteLine($"SendResponse: {sendResposne}");
                 }
                 catch (Exception ex)
@@ -74,20 +75,20 @@ namespace WhatsAppConsole
         {
             var challenge = GetNextChallege();
 
-            wa.OnConnectFailed += WriteError;
-            wa.OnConnectSuccess += () =>
+            _wa.OnConnectFailed += WriteError;
+            _wa.OnConnectSuccess += () =>
             {
                 Console.WriteLine("Successfully connected!");
                 try
                 {
-                    wa.Login(challenge);
+                    _wa.Login(challenge);
 
-                    wa.SendGetPrivacyList();
-                    wa.SendGetClientConfig();
+                    _wa.SendGetPrivacyList();
+                    _wa.SendGetClientConfig();
 
-                    var prekeys = wa.LoadPreKeys();
+                    var prekeys = _wa.LoadPreKeys();
                     if (prekeys == null || !prekeys.Any())
-                        wa.sendSetPreKeys(true);
+                        _wa.sendSetPreKeys(true);
                 }
                 catch (Exception e)
                 {
@@ -95,52 +96,52 @@ namespace WhatsAppConsole
                 }
             };
 
-            wa.OnDisconnect += WriteError;
-            wa.OnError += (id, from, code, text) => Console.WriteLine("ERROR: " +
+            _wa.OnDisconnect += WriteError;
+            _wa.OnError += (id, from, code, text) => Console.WriteLine("ERROR: " +
                                                                       $"Id: {id}," +
                                                                       $"From: {from}," +
                                                                       $"Code: {code}," +
                                                                       $"Text: {text}");
-            wa.OnGetMessage += OnGetMessage;
+            _wa.OnGetMessage += OnGetMessage;
 
-            wa.OnGetSyncResult += (int index, string sid, Dictionary<string, string> users, string[] numbers) =>
+            _wa.OnGetSyncResult += (int index, string sid, Dictionary<string, string> users, string[] numbers) =>
             {
                 Console.WriteLine($"Synced. index: {index}");
             };
 
-            wa.OnGetTyping += from =>
+            _wa.OnGetTyping += from =>
             {
                 Console.WriteLine($"{from} is typing...");
             };
 
-            wa.OnGetPhoto += OnGetPhoto;
+            _wa.OnGetPhoto += OnGetPhoto;
 
-            wa.OnLoginFailed += WriteError;
+            _wa.OnLoginFailed += WriteError;
 
-            wa.OnLoginSuccess += (number, data) =>
+            _wa.OnLoginSuccess += (number, data) =>
             {
                 Console.WriteLine($"Logged in successfully! {number}");
                 SetNextChallege(data);
 
-                Connected = true;
+                _connected = true;
 
                 StartPolling();
                 StartSendingMessages();
             };
 
-            wa.OnErrorAxolotl += WriteError;
+            _wa.OnErrorAxolotl += WriteError;
 
-            wa.OnGetMessageReceivedServer += (from, id) => Console.WriteLine($"Message received by server. {from}, {id}");
-            wa.OnGetMessageReceivedClient += (from, id) => Console.WriteLine($"Message received by user. {from}, {id}");
-            wa.OnGetMessageReadedClient += (from, id) => Console.WriteLine($"Message read by client. {from}, {id}");
+            _wa.OnGetMessageReceivedServer += (from, id) => Console.WriteLine($"Message received by server. {from}, {id}");
+            _wa.OnGetMessageReceivedClient += (from, id) => Console.WriteLine($"Message received by user. {from}, {id}");
+            _wa.OnGetMessageReadedClient += (from, id) => Console.WriteLine($"Message read by client. {from}, {id}");
 
             DebugAdapter.Instance.OnPrintDebug += Instance_OnPrintDebug;
 
-            wa.ConfigureInMemoryAuth();
+            _wa.ConfigureInMemoryAuth();
 
-            wa.Connect();
+            _wa.Connect();
 
-            wa.SendGetServerProperties();
+            _wa.SendGetServerProperties();
         }
 
         
@@ -151,16 +152,16 @@ namespace WhatsAppConsole
 
         static void StartPolling()
         {
-            Poll = true;
+            _poll = true;
 
             Thread t = new Thread(() =>
             {
-                while (Poll && Connected)
+                while (_poll && _connected)
                 {
                     Thread.Sleep(200);
                     try
                     {
-                        wa.PollMessages();
+                        _wa.PollMessages();
                     }
                     catch (Exception ex)
                     {
@@ -194,7 +195,7 @@ namespace WhatsAppConsole
             catch (Exception e)
             {
                 WriteError(e);
-                byte[] challenge = Convert.FromBase64String(Password); //initial default
+                byte[] challenge = Convert.FromBase64String(_password); //initial default
                 SetNextChallege(challenge);
                 return File.ReadAllBytes(filePath);
             }
