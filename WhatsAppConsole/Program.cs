@@ -1,20 +1,18 @@
 ﻿using System;
-using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Whatsapp.AuthenticationManeger.InMemory;
+using Whatsapp.ChallengeManeger.LocalDisk;
 using WhatsAppApi;
 using WhatsAppApi.Helper;
+using Whatsapp.ChallengeManeger;
 
 namespace WhatsAppConsole
 {
     class Program
     {
-        private static string _phoneNumber;
-        private static string _password;
-        private static string _destinationNumber;
-
         private static WhatsApp _wa;
+        private static bool _loggedIn;
 
         static void Main(string[] args)
         {
@@ -24,82 +22,67 @@ namespace WhatsAppConsole
                 .AddJsonFile("settings.json", true)
                 .Build();
 
-            _phoneNumber = config["PhoneNumber"];
-            _password = config["Password"];
-            _destinationNumber = config["DestinationNumber"];
+            string phoneNumber = config["PhoneNumber"];
+            string password = config["Password"];
+            string destinationNumber = config["DestinationNumber"];
             string nickName = config["NickName"];
 
-            _wa = new WhatsApp(_phoneNumber, _password, nickName);
+            _wa = new WhatsApp(phoneNumber, password, nickName);
+
+            IChallengeManager challengeManager = new LocalDiskChallengeManager(phoneNumber);
+            _wa.ConfigureInMemoryAuth(challengeManager, password);
 
             _wa.SendGetServerProperties();
-
-            _wa.ConfigureInMemoryAuth();
 
             _wa.OnGetMessage += OnGetMessage;
 
             _wa.OnConnectSuccess += () => Console.WriteLine("Connected!");
 
-            _wa.OnLoginSuccess += LoginSuccess;
+            _wa.OnLoginSuccess += (number, data) =>
+            {
+                _loggedIn = true;
+                Console.WriteLine("Logged in!");
+            };
+
+            _wa.OnConnectFailed += exception => Console.WriteLine("ERROR: " + exception?.GetBaseException()?.Message);
+
+            _wa.OnLoginFailed += data => Console.WriteLine("ERROR: " + data);
+
+            _wa.OnError += (id, from, code, text) => Console.WriteLine($"ERROR: {id}, {from}, {code}, {text}");
 
             _wa.Connect();
 
             Thread.Sleep(1000);
 
-            _wa.Login(GetNextChallege());
+            StartSending(destinationNumber);
+            StartPolling();
+        }
 
-            if (_wa.LoadPreKeys() == null)
-                _wa.sendSetPreKeys(true);
+        private static void StartPolling()
+        {
+            while (_loggedIn)
+            {
+                Thread.Sleep(500);
+                _wa.PollMessages();
+            }
+        }
 
+        private static void StartSending(string destinationNumber)
+        {
             Thread t = new Thread(() =>
             {
-                while (true)
+                while (_loggedIn)
                 {
                     Console.Write("Me: ");
                     string input = Console.ReadLine();
                     if (string.IsNullOrEmpty(input)) continue;
 
-                    _wa.SendMessage(_destinationNumber, input);
+                    _wa.SendMessage(destinationNumber, input);
                 }
             })
             { IsBackground = true };
 
             t.Start();
-
-            while (true)
-            {
-                Thread.Sleep(200);
-                _wa.PollMessages();
-            }
-        }
-
-        private static void LoginSuccess(string phoneNumber, byte[] data)
-        {
-            Console.WriteLine("Logged in!");
-            SetNextChallege(data);
-        }
-
-        static void SetNextChallege(byte[] bytes)
-        {
-            string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string filePath = Path.Combine(path, $"{_phoneNumber}_next_challenge.txt");
-            File.WriteAllBytes(filePath, bytes);
-        }
-
-        static byte[] GetNextChallege()
-        {
-            string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string filePath = Path.Combine(path, $"{_phoneNumber}_next_challenge.txt");
-
-            try
-            {
-                return File.ReadAllBytes(filePath);
-            }
-            catch
-            {
-                byte[] challenge = Convert.FromBase64String(_password); //initial default
-                SetNextChallege(challenge);
-                return File.ReadAllBytes(filePath);
-            }
         }
 
         private static void OnGetMessage(ProtocolTreeNode messageNode, string from, string id, string name, string message, bool receiptSent)

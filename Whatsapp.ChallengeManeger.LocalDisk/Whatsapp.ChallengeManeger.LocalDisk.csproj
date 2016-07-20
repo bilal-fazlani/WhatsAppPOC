@@ -4,15 +4,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E68C6597-9338-4940-B54E-8207BB8E89B8}</ProjectGuid>
+    <ProjectGuid>{D75DB2B7-8228-4D55-8005-05FB15BE7826}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Whatsapp.AuthenticationManeger.InMemory</RootNamespace>
-    <AssemblyName>Whatsapp.AuthenticationManeger.InMemory</AssemblyName>
+    <RootNamespace>Whatsapp.ChallengeManeger.LocalDisk</RootNamespace>
+    <AssemblyName>Whatsapp.ChallengeManeger.LocalDisk</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,12 +24,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -37,6 +43,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
@@ -82,22 +89,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extension.cs" />
-    <Compile Include="InmemoryDatabaseAdapter.cs" />
-    <Compile Include="InmemoryIdentityManager.cs" />
-    <Compile Include="InmemoryPreKeysManager.cs" />
-    <Compile Include="InMemorySessionsManager.cs" />
-    <Compile Include="InmemorySignedPreKeysManager.cs" />
+    <Compile Include="LocalDiskChallengeManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Whatsapp.AuthenticationManeger\Whatsapp.AuthenticationManeger.csproj">
-      <Project>{2f78651a-0af0-4340-9ef9-6e8d547420a4}</Project>
-      <Name>Whatsapp.AuthenticationManeger</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Whatsapp.ChallengeManeger\Whatsapp.ChallengeManeger.csproj">
       <Project>{059e60d0-49e4-4908-a806-e2d0efc867cc}</Project>
       <Name>Whatsapp.ChallengeManeger</Name>
