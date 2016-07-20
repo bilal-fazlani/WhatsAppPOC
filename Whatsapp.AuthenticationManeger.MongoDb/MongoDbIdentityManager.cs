@@ -1,10 +1,23 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using MongoDB.Driver;
 
 namespace Whatsapp.AuthenticationManeger.MongoDb
 {
     public class MongoDbIdentityManager : IIdentityManager
     {
+        //more info here: http://mongodb.github.io/mongo-csharp-driver/2.2/getting_started/quick_tour/
+        private readonly MongoClient _mongoClient;
+        private readonly IMongoDatabase _mongoDatabase;
+        private readonly IMongoCollection<AxolotlIdentity> _collection;
+
+        public MongoDbIdentityManager(string mongoDbConnectionString)
+        {
+            _mongoClient = new MongoClient(mongoDbConnectionString);
+            _mongoDatabase = _mongoClient.GetDatabase("whatsapp-authentication");
+            _collection = _mongoDatabase.GetCollection<AxolotlIdentity>("Identities");
+        }
+
         private class AxolotlIdentity
         {
             public string RecipientId { get; set; }

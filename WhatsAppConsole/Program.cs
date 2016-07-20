@@ -26,6 +26,7 @@ namespace WhatsAppConsole
             string password = config["Password"];
             string destinationNumber = config["DestinationNumber"];
             string nickName = config["NickName"];
+            string mongoConnectionString = config["MongoConnectionString"];
 
             _wa = new WhatsApp(phoneNumber, password, nickName);
 
