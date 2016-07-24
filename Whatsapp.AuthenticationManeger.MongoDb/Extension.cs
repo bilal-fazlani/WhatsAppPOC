@@ -16,7 +16,7 @@ namespace Whatsapp.AuthenticationManeger.MongoDb
             string password)
         {
             new AuthenticationConfigurator(wa)
-                .ConfigureAuthentication(new InmemoryAuthenticationConfigurationManager());
+                .ConfigureAuthentication(new MongoDbAdapter());
 
             wa.OnConnectSuccess += () =>
             {

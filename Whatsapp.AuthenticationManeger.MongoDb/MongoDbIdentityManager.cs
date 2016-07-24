@@ -7,15 +7,13 @@ namespace Whatsapp.AuthenticationManeger.MongoDb
     public class MongoDbIdentityManager : IIdentityManager
     {
         //more info here: http://mongodb.github.io/mongo-csharp-driver/2.2/getting_started/quick_tour/
-        private readonly MongoClient _mongoClient;
-        private readonly IMongoDatabase _mongoDatabase;
         private readonly IMongoCollection<AxolotlIdentity> _collection;
 
         public MongoDbIdentityManager(string mongoDbConnectionString)
         {
-            _mongoClient = new MongoClient(mongoDbConnectionString);
-            _mongoDatabase = _mongoClient.GetDatabase("whatsapp-authentication");
-            _collection = _mongoDatabase.GetCollection<AxolotlIdentity>("Identities");
+            var mongoClient = new MongoClient(mongoDbConnectionString);
+            var mongoDatabase = mongoClient.GetDatabase("whatsapp-authentication");
+            _collection = mongoDatabase.GetCollection<AxolotlIdentity>("Identities");
         }
 
         private class AxolotlIdentity
@@ -26,18 +24,17 @@ namespace Whatsapp.AuthenticationManeger.MongoDb
             public byte[] PrivateKey { get; set; }
         }
 
-        private readonly Dictionary<string, AxolotlIdentity> AxolotlIdentities = new Dictionary<string, AxolotlIdentity>();
-
         public void OnstoreLocalData(uint registrationId, byte[] publickey, byte[] privatekey)
         {
-            AxolotlIdentities["-1"]
-                = new AxolotlIdentity
-                {
-                    RegistrationId = registrationId,
-                    PrivateKey = privatekey,
-                    PublicKey = publickey,
-                    RecipientId = "-1"
-                };
+            var axolotlIdentity = new AxolotlIdentity
+            {
+                RegistrationId = registrationId,
+                PrivateKey = privatekey,
+                PublicKey = publickey,
+                RecipientId = "-1"
+            };
+
+            _collection.InsertOne(axolotlIdentity);
         }
 
         public bool OnisTrustedIdentity(string recipientId, byte[] identityKey)
@@ -47,11 +44,14 @@ namespace Whatsapp.AuthenticationManeger.MongoDb
             return true;
         }
 
-        public  uint OngetLocalRegistrationId()
+        public uint OngetLocalRegistrationId()
         {
-            if (AxolotlIdentities.ContainsKey("-1"))
+            var identity = _collection.Find(x => x.RecipientId == "-1")
+                .SingleOrDefault();
+
+            if (identity != null)
             {
-                return AxolotlIdentities["-1"].RegistrationId;
+                return identity.RegistrationId;
             }
             return 0;
         }
@@ -60,33 +60,33 @@ namespace Whatsapp.AuthenticationManeger.MongoDb
         {
             List<byte[]> keyPair = new List<byte[]>();
 
-            AxolotlIdentity identity;
+            AxolotlIdentity identity = _collection.Find(x => x.RecipientId == "-1").SingleOrDefault();
 
-            if (AxolotlIdentities.TryGetValue("-1", out identity))
-
-                if (identity != null)
+            if (identity != null)
+            {
+                if (identity.PublicKey != null)
                 {
-                    if (identity.PublicKey != null)
-                    {
-                        keyPair.Add(identity.PublicKey);
-                    }
-                    if (identity.PrivateKey != null)
-                    {
-                        keyPair.Add(identity.PrivateKey);
-                    }
+                    keyPair.Add(identity.PublicKey);
                 }
+                if (identity.PrivateKey != null)
+                {
+                    keyPair.Add(identity.PrivateKey);
+                }
+            }
 
             if (keyPair.Any()) return keyPair;
             return null;
         }
 
-        public  bool OnsaveIdentity(string recipientId, byte[] identityKey)
+        public bool OnsaveIdentity(string recipientId, byte[] identityKey)
         {
-            AxolotlIdentities[recipientId] = new AxolotlIdentity
+            var identity = new AxolotlIdentity
             {
                 PublicKey = identityKey,
                 RecipientId = recipientId
             };
+
+            _collection.ReplaceOne(x => x.RecipientId == "-1", identity, new UpdateOptions {IsUpsert = true});
 
             return true;
         }
