@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
-using Microsoft.Extensions.Configuration;
+using MongoDB.Bson;
 using Whatsapp.AuthenticationManeger.InMemory;
-using Whatsapp.ChallengeManeger.LocalDisk;
+using Whatsapp.ChatManager;
+using Whatsapp.ChatManager.MongoDb;
 using WhatsAppApi;
-using WhatsAppApi.Helper;
-using Whatsapp.ChallengeManeger;
 
 namespace WhatsAppConsole
 {
@@ -13,29 +14,19 @@ namespace WhatsAppConsole
     {
         private static WhatsApp _wa;
         private static bool _loggedIn;
+        private static AppConfiguration _configuration;
 
         static void Main(string[] args)
         {
-            IConfiguration config =
-                new ConfigurationBuilder()
-                .AddEnvironmentVariables()
-                .AddJsonFile("settings.json", true)
-                .Build();
+            _configuration = AppConfiguration.GetInstance(args);
+            PrintLast10Messages();
 
-            string phoneNumber = config["PhoneNumber"];
-            string password = config["Password"];
-            string destinationNumber = config["DestinationNumber"];
-            string nickName = config["NickName"];
-            string mongoConnectionString = config["MongoConnectionString"];
+            _wa = new WhatsApp(_configuration.PhoneNumber, _configuration.Password, _configuration.NickName);
 
-            _wa = new WhatsApp(phoneNumber, password, nickName);
+            _wa.ConfigureInMemoryAuth(_configuration.PhoneNumber, _configuration.Password);
+            _wa.ConfigureChatStorageWithMongoDb(_configuration.MongoConnectionString, _configuration.PhoneNumber);
 
-            IChallengeManager challengeManager = new LocalDiskChallengeManager(phoneNumber);
-            _wa.ConfigureInMemoryAuth(challengeManager, password);
-
-            _wa.SendGetServerProperties();
-
-            _wa.OnGetMessage += OnGetMessage;
+            _wa.OnGetMessage += (node, from, id, name, message, sent) => Console.WriteLine($"[{DateTime.Now}] {from}: {message}");
 
             _wa.OnConnectSuccess += () => Console.WriteLine("Connected!");
 
@@ -53,10 +44,22 @@ namespace WhatsAppConsole
 
             _wa.Connect();
 
-            Thread.Sleep(1000);
-
-            StartSending(destinationNumber);
+            StartSending(_configuration.DestinationNumber);
             StartPolling();
+        }
+
+        private static void PrintLast10Messages()
+        {
+            MongoDbChatManager chatManager = new MongoDbChatManager(_configuration.MongoConnectionString);
+
+            IEnumerable<MongoChatMessage> messages = chatManager.GetLastMessagesAsync(10).Result.Reverse();
+
+            foreach (var message in messages)
+            {
+                Console.WriteLine(message.IsMine 
+                    ? $"[{message.TimeStamp}] Me: {message.Message} ({message.MessageStatus})" 
+                    : $"[{message.TimeStamp}] {message.From}: {message.Message}");
+            }
         }
 
         private static void StartPolling()
@@ -72,23 +75,32 @@ namespace WhatsAppConsole
         {
             Thread t = new Thread(() =>
             {
+                MongoDbChatManager chatManager = new MongoDbChatManager(_configuration.MongoConnectionString);
+
                 while (_loggedIn)
                 {
                     Console.Write("Me: ");
                     string input = Console.ReadLine();
                     if (string.IsNullOrEmpty(input)) continue;
 
-                    _wa.SendMessage(destinationNumber, input);
+                    string id = _wa.SendMessage(destinationNumber, input);
+
+                    chatManager.SaveMessageAsync(new MongoChatMessage
+                    {
+                        Message = input,
+                        MessageStatus = MessageStatus.Sending,
+                        To = _configuration.DestinationNumber,
+                        TimeStamp = DateTime.Now,
+                        _id = ObjectId.GenerateNewId(),
+                        IsMine = true,
+                        From = _configuration.PhoneNumber,
+                        LocalMessageId = id
+                    }).Wait();
                 }
             })
             { IsBackground = true };
 
             t.Start();
-        }
-
-        private static void OnGetMessage(ProtocolTreeNode messageNode, string from, string id, string name, string message, bool receiptSent)
-        {
-            Console.WriteLine($"{from}({name}): {message}");
         }
     }
 }

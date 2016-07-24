@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 
 namespace Whatsapp.ChatManager
 {
-    public interface IChatManager
+    public interface IChatManager<T> where T:ChatMessage
     {
-        Task SaveChat(ChatMessage chatMessage);
-        Task<IEnumerable<ChatMessage>> GetLastMessages(int count);
-        Task<IEnumerable<ChatMessage>> GetAllMessages();
+        Task SaveMessageAsync(T chatMessage);
+        Task <IEnumerable<T>> GetLastMessagesAsync(int count);
+        Task ChangeMessageStatus(string localMessageId, MessageStatus status);
     }
 }

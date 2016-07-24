@@ -98,9 +98,17 @@
       <Project>{2f78651a-0af0-4340-9ef9-6e8d547420a4}</Project>
       <Name>Whatsapp.AuthenticationManeger</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Whatsapp.ChallengeManeger.LocalDisk\Whatsapp.ChallengeManeger.LocalDisk.csproj">
+      <Project>{d75db2b7-8228-4d55-8005-05fb15be7826}</Project>
+      <Name>Whatsapp.ChallengeManeger.LocalDisk</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Whatsapp.ChallengeManeger\Whatsapp.ChallengeManeger.csproj">
       <Project>{059e60d0-49e4-4908-a806-e2d0efc867cc}</Project>
       <Name>Whatsapp.ChallengeManeger</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Whatsapp.ChatManager.LocalDisk\Whatsapp.ChatManager.LocalDisk.csproj">
+      <Project>{d1f52c65-d3d2-47e0-bbeb-7e729b67a240}</Project>
+      <Name>Whatsapp.ChatManager.LocalDisk</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

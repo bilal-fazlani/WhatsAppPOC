@@ -80,6 +80,10 @@
       <HintPath>..\packages\Microsoft.Extensions.Configuration.Abstractions.1.0.0\lib\netstandard1.0\Microsoft.Extensions.Configuration.Abstractions.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.Extensions.Configuration.CommandLine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Configuration.CommandLine.1.0.0\lib\netstandard1.1\Microsoft.Extensions.Configuration.CommandLine.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.Extensions.Configuration.EnvironmentVariables, Version=1.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Extensions.Configuration.EnvironmentVariables.1.0.0\lib\net451\Microsoft.Extensions.Configuration.EnvironmentVariables.dll</HintPath>
       <Private>True</Private>
@@ -108,6 +112,18 @@
       <HintPath>..\packages\Microsoft.Extensions.Primitives.1.0.0\lib\netstandard1.0\Microsoft.Extensions.Primitives.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="MongoDB.Bson, Version=2.2.4.26, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MongoDB.Bson.2.2.4\lib\net45\MongoDB.Bson.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="MongoDB.Driver, Version=2.2.4.26, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MongoDB.Driver.2.2.4\lib\net45\MongoDB.Driver.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="MongoDB.Driver.Core, Version=2.2.4.26, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MongoDB.Driver.Core.2.2.4\lib\net45\MongoDB.Driver.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="mycurve25519, Version=1.0.5994.20651, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mycurve25519.x64.0.1.0\lib\net45\mycurve25519.dll</HintPath>
       <Private>True</Private>
@@ -131,6 +147,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppConfiguration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -153,6 +170,14 @@
     <ProjectReference Include="..\Whatsapp.ChallengeManeger\Whatsapp.ChallengeManeger.csproj">
       <Project>{059E60D0-49E4-4908-A806-E2D0EFC867CC}</Project>
       <Name>Whatsapp.ChallengeManeger</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Whatsapp.ChatManager.MongoDb\Whatsapp.ChatManager.MongoDb.csproj">
+      <Project>{6a0a4142-6ad5-47bf-9f67-5219e91b71ab}</Project>
+      <Name>Whatsapp.ChatManager.MongoDb</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Whatsapp.ChatManager\Whatsapp.ChatManager.csproj">
+      <Project>{6eb61130-91ed-433e-8220-1cd49bf9909a}</Project>
+      <Name>Whatsapp.ChatManager</Name>
     </ProjectReference>
     <ProjectReference Include="..\WhatsAppApi\WhatsAppApi.csproj">
       <Project>{3fc9096a-c4d2-40c7-be7b-d98acab3bd2b}</Project>

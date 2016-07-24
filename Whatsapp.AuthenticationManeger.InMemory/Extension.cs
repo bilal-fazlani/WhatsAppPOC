@@ -1,4 +1,5 @@
 ﻿using Whatsapp.ChallengeManeger;
+using Whatsapp.ChallengeManeger.LocalDisk;
 using WhatsAppApi;
 
 namespace Whatsapp.AuthenticationManeger.InMemory
@@ -10,6 +11,8 @@ namespace Whatsapp.AuthenticationManeger.InMemory
             IChallengeManager challengeManager,
             string password)
         {
+            wa.SendGetServerProperties();
+
             new AuthenticationConfigurator(wa)
                 .ConfigureAuthentication(new InmemoryAuthenticationConfigurationManager());
 
@@ -25,6 +28,22 @@ namespace Whatsapp.AuthenticationManeger.InMemory
 
                 challengeManager.SetNextChallege(data);
             };
+        }
+
+        /// <summary>
+        /// This will use a LocalDiskChallengeManager.
+        /// </summary>
+        /// <see cref="LocalDiskChallengeManager"/>
+        /// <param name="wa"></param>
+        /// <param name="phoneNumber"></param>
+        /// <param name="password"></param>
+        public static void ConfigureInMemoryAuth(
+            this WhatsApp wa,
+            string phoneNumber,
+            string password)
+        {
+            IChallengeManager challengeManager = new LocalDiskChallengeManager(phoneNumber);
+            wa.ConfigureInMemoryAuth(challengeManager, password);
         }
     }
 }
